@@ -1,16 +1,6 @@
 import axios from "axios";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-
-interface Props {
-  open: boolean;
-  setShowEditForm: React.Dispatch<React.SetStateAction<boolean>>;
-  selectedStudent: {
-    id: number;
-    name: string;
-    email: string;
-    age: number;
-  };
-}
+import { useParams, useNavigate } from "react-router";
 
 interface StudentInput {
   name: string;
@@ -18,29 +8,38 @@ interface StudentInput {
   age: number;
 }
 
-const EditStudentForm: React.FC<Props> = ({
-  open,
-  setShowEditForm,
-  selectedStudent,
-}) => {
-  const handleClose = () => {
-    setShowEditForm(false);
-  };
+const EditStudentForm: React.FC = () => {
+  const { id } = useParams<{ id: string }>(); // Get ID from route
+  const navigate = useNavigate();
 
-  const [newData, setNewData] = useState<StudentInput>(selectedStudent);
+  const [studentData, setStudentData] = useState<StudentInput>({
+    name: "",
+    email: "",
+    age: 0,
+  });
 
   useEffect(() => {
-    setNewData({
-      name: selectedStudent.name,
-      email: selectedStudent.email,
-      age: selectedStudent.age,
-    });
-  }, [selectedStudent]);
+    const fetchStudent = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/students/${id}`
+        );
+        const { name, email, age } = response.data;
+        setStudentData({ name, email, age });
+      } catch (error) {
+        console.error("Error fetching student data:", error);
+      }
+    };
+
+    if (id) {
+      fetchStudent();
+    }
+  }, [id]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setNewData((prevdata) => ({
-      ...prevdata,
+    setStudentData((prev) => ({
+      ...prev,
       [name]: name === "age" ? parseInt(value) : value,
     }));
   };
@@ -48,57 +47,52 @@ const EditStudentForm: React.FC<Props> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await axios.put(
-        `http://localhost:5000/api/students/${selectedStudent.id}`,
-        newData
-      );
-      alert("Student edited successfully!!");
-      setShowEditForm(false);
+      await axios.put(`http://localhost:5000/api/students/${id}`, studentData);
+      alert("Student updated successfully!");
+      navigate("/"); // Redirect to home
     } catch (error) {
-      alert("There was some error !! Check the console!");
-      console.log("There is some error :" + error);
+      alert("Error updating student. Check the console.");
+      console.error(error);
     }
   };
+
   return (
-    <>
-      {open && (
-        <div className="formcontainer">
-          <button onClick={handleClose}>X</button>
-          <form onSubmit={handleSubmit}>
-            <div>
-              <label>Name: </label>
-              <input
-                type="text"
-                name="name"
-                value={newData.name}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Email: </label>
-              <input
-                type="email"
-                name="email"
-                value={newData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <label>Age: </label>
-              <input
-                type="number"
-                name="age"
-                value={newData.age}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <button type="submit">Submit</button>
-          </form>
+    <div className="formcontainer">
+      <h2>Edit Student</h2>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label>Name: </label>
+          <input
+            name="name"
+            type="text"
+            value={studentData.name}
+            onChange={handleChange}
+            required
+          />
         </div>
-      )}
-    </>
+        <div>
+          <label>Email: </label>
+          <input
+            name="email"
+            type="email"
+            value={studentData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Age: </label>
+          <input
+            name="age"
+            type="number"
+            value={studentData.age}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
   );
 };
 

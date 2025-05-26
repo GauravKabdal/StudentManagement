@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 interface student {
   id: number;
@@ -10,18 +11,13 @@ interface student {
 
 interface Props {
   studentData: student[];
-  setShowEditForm: React.Dispatch<React.SetStateAction<boolean>>;
-  setSelectedStudent: React.Dispatch<React.SetStateAction<student>>;
 }
 
-const StudentTable: React.FC<Props> = ({
-  studentData,
-  setShowEditForm,
-  setSelectedStudent,
-}) => {
+const StudentTable: React.FC<Props> = ({ studentData }) => {
+  const navigate = useNavigate();
+
   const handleEdit = (student: student) => {
-    setSelectedStudent(student);
-    setShowEditForm(true);
+    navigate(`/edit-student/${student.id}`);
   };
 
   const [message, setMessage] = useState<string | null>("");
@@ -34,6 +30,7 @@ const StudentTable: React.FC<Props> = ({
       setTimeout(() => {
         setMessage(null);
       }, 1000);
+      navigate("/");
     } catch (error) {
       alert("There is some problem ....Check the console!!");
       console.log("Error!! :" + error);
